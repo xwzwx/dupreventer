@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Duplicate Preventer (Online)</title>
+    <link rel="icon" type="image/x-icon" href="https://raw.githubusercontent.com/xwzwx/veloc-assets/refs/heads/main/nodup.ico">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f4f4f9; }
+        .container { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); text-align: center; width: 90%; max-width: 450px; }
+        h1 { color: #333; }
+        form { margin-top: 1rem; display: flex; gap: 10px; }
+        input[type="text"] { padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; flex-grow: 1; }
+        button { padding: 10px 20px; border: none; color: white; border-radius: 4px; cursor: pointer; font-size: 1rem; background-color: #007bff; }
+        button:hover { background-color: #0056b3; }
+        #message { margin-top: 1rem; font-weight: bold; min-height: 20px; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Shall I check new guy?</h1>
+        <form id="itemForm">
+            <input type="text" id="itemInput" placeholder="Enter name, email, or ID..." required>
+            <button type="submit">Check / Add</button>
+        </form>
+        <div id="message"></div>
+    </div>
+
+    <!-- Firebase Libraries -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <script>
+        // ======================================================================
+        // PASTE YOUR FIREBASE CONFIGURATION OBJECT FROM STEP 1.4 HERE
+        // ======================================================================
+        const firebaseConfig = {
+          apiKey: "AIzaSyBMPWo2bwtBVUFtGYy6v6-lJI3JFSCESKo",
+          authDomain: "dupreventer.firebaseapp.com",
+          projectId: "dupreventer",
+          storageBucket: "dupreventer.firebasestorage.app",
+          messagingSenderId: "147900933652",
+          appId: "1:147900933652:web:ed33a987b2561e42e56901"
+        };
+        // ======================================================================
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        const itemForm = document.getElementById('itemForm');
+        const itemInput = document.getElementById('itemInput');
+        const messageDiv = document.getElementById('message');
+        
+        let currentItems = [];
+        const itemsRef = database.ref('items');
+
+        itemsRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            currentItems = data ? Object.values(data) : [];
+        });
+
+        itemForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const newItem = itemInput.value.trim().toLowerCase();
+            
+            if (newItem === '') {
+                displayMessage('Please enter something to check.', 'error');
+                return;
+            }
+
+            if (currentItems.includes(newItem)) {
+                displayMessage('This guy is already on the list!', 'error');
+            } else {
+                itemsRef.push().set(newItem)
+                    .then(() => {
+                        displayMessage('New guy added successfully!', 'success');
+                        itemInput.value = '';
+                    });
+            }
+        });
+
+        function displayMessage(message, type) {
+            messageDiv.textContent = message;
+            messageDiv.className = type;
+        }
+    </script>
+</body>
+</html>

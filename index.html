@@ -10,17 +10,17 @@
         .container { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); text-align: center; width: 90%; max-width: 450px; }
         h1 { color: #333; }
         form { margin-top: 1rem; display: flex; gap: 10px; }
-        input[type="text"] { padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; flex-grow: 1; }
+        /* UPDATED: The input type is now 'email' */
+        input[type="email"] { padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; flex-grow: 1; }
         button { padding: 10px 20px; border: none; color: white; border-radius: 4px; cursor: pointer; font-size: 1rem; background-color: #007bff; }
         button:hover { background-color: #0056b3; }
         #message {
             margin-top: 1rem;
             font-weight: bold;
             min-height: 20px;
-            opacity: 1; /* NEW: Start fully visible */
-            transition: opacity 0.5s ease-out; /* NEW: Animate the opacity change over 0.5s */
+            opacity: 1;
+            transition: opacity 0.5s ease-out;
         }
-        /* NEW: Helper class to make the element invisible */
         #message.fading-out {
             opacity: 0;
         }
@@ -32,8 +32,9 @@
 
     <div class="container">
         <h1>Shall I check new guy?</h1>
-        <form id="itemForm">
-            <input type="text" id="itemInput" placeholder="Enter name, email, or ID..." required>
+        <form id="emailForm">
+            <!-- UPDATED: Changed type to "email" and placeholder text -->
+            <input type="email" id="emailInput" placeholder="Enter email address..." required>
             <button type="submit">Check / Add</button>
         </form>
         <div id="message"></div>
@@ -60,8 +61,8 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        const itemForm = document.getElementById('itemForm');
-        const itemInput = document.getElementById('itemInput');
+        const emailForm = document.getElementById('emailForm');
+        const emailInput = document.getElementById('emailInput');
         const messageDiv = document.getElementById('message');
         
         let currentItems = [];
@@ -71,46 +72,52 @@
             const data = snapshot.val();
             currentItems = data ? Object.values(data) : [];
         });
+        
+        // NEW: A helper function to validate email format using a Regular Expression
+        function isValidEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
 
-        itemForm.addEventListener('submit', function(event) {
+        emailForm.addEventListener('submit', function(event) {
             event.preventDefault();
-            const newItem = itemInput.value.trim().toLowerCase();
+            const newEmail = emailInput.value.trim().toLowerCase();
             
-            if (newItem === '') {
-                displayMessage('Please enter something to check.', 'error');
+            if (newEmail === '') {
+                displayMessage('Please enter an email address.', 'error');
                 return;
             }
 
-            if (currentItems.includes(newItem)) {
+            // NEW: Add the email validation step here
+            if (!isValidEmail(newEmail)) {
+                displayMessage('Please enter a valid email address format.', 'error');
+                return;
+            }
+
+            if (currentItems.includes(newEmail)) {
                 displayMessage('This guy is already on the list!', 'error');
             } else {
-                itemsRef.push().set(newItem)
+                itemsRef.push().set(newEmail)
                     .then(() => {
                         displayMessage('New guy added successfully!', 'success');
-                        itemInput.value = '';
+                        emailInput.value = '';
                     });
             }
         });
 
-        // NEW: A variable to hold our timer
         let messageTimer;
 
-        // UPDATED: The displayMessage function now handles the fade-out
         function displayMessage(message, type) {
-            // Make the message instantly visible and set its content/color
             messageDiv.classList.remove('fading-out');
             messageDiv.textContent = message;
             messageDiv.className = type;
 
-            // Clear any previous timer that might be running
             clearTimeout(messageTimer);
 
-            // Set a new timer to fade out the message after 3 seconds
             messageTimer = setTimeout(() => {
                 messageDiv.classList.add('fading-out');
-            }, 3000); // 3000 milliseconds = 3 seconds
+            }, 3000);
         }
     </script>
 </body>
 </html>
-
